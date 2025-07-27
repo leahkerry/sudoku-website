@@ -36,3 +36,123 @@
     transform: rotate(360deg);
   }
 }
+
+.sudoku-table {
+  border-collapse: collapse;
+  margin: 0 auto;
+  box-shadow: 0 0 0 6px #222; /* thick outer border */
+}
+
+.sudoku-cell {
+  border: 1px solid #888;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  position: relative;
+  background: #fff;
+}
+
+/* Thicker lines for box boundaries */
+.sudoku-cell {
+  /* ...existing code... */
+  border-top: 1px solid #888;
+  border-right: 1px solid #888;
+  border-bottom: 1px solid #888;
+  border-left: 1px solid #888;
+}
+
+.sudoku-cell:nth-child(3),
+.sudoku-cell:nth-child(6) {
+  border-right: 3px solid #222;
+}
+.sudoku-cell:first-child {
+  border-left: 3px solid #222;
+}
+.sudoku-table tr:nth-child(3) .sudoku-cell,
+.sudoku-table tr:nth-child(6) .sudoku-cell {
+  border-bottom: 3px solid #222;
+}
+.sudoku-table tr:first-child .sudoku-cell {
+  border-top: 3px solid #222;
+}
+
+.sudoku-cell.selected {
+  background: #dd82a2;
+}
+
+.sudoku-cell.highlight {
+  background: #ffdff0;
+}
+
+.cell-input {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-size: 1.2em;
+  border: none;
+  background: transparent;
+}
+
+.notes-section {
+  margin-top: 20px;
+}
+
+.notes-mode-btn {
+  margin-bottom: 10px;
+  margin-top: 20px;
+  padding: 6px 16px;
+  font-size: 1em;
+  background: #eee;
+  /* border: 2px solid #222; */
+  border-radius: 6px;
+  cursor: pointer;
+}
+.notes-mode-btn.active {
+  background: #ffdff0;
+  border-color: #2f414a;
+}
+
+.cell-notes {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  pointer-events: none;
+}
+
+.note-number {
+  font-size: 0.7em;
+  color: #888;
+  text-align: center;
+  line-height: 1.2em;
+  height: 12px;
+  width: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-number.active {
+  color: #2f414a;
+  font-weight: bold;
+}
+
+.cell-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #222;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.clue-cell {
+  background: #e0e0e0 !important; /* gray for initial clues */
+}
