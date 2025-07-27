@@ -77,11 +77,11 @@
 }
 
 .sudoku-cell.selected {
-  background: #dd82a2;
+  background: #d2c0ff;
 }
 
 .sudoku-cell.highlight {
-  background: #ffdff0;
+  background: #efd6ffb2;
 }
 
 .cell-input {
@@ -108,7 +108,7 @@
   cursor: pointer;
 }
 .notes-mode-btn.active {
-  background: #ffdff0;
+  background: #ebdaff;
   border-color: #2f414a;
 }
 
@@ -154,5 +154,17 @@
 }
 
 .clue-cell {
-  background: #e0e0e0 !important; /* gray for initial clues */
+  background: #eeecf3; /* gray for initial clues */
+}
+
+button {
+    /* background: black; */
+    margin-left: 10px;
+    margin-top: 20px;
+    padding: 6px 16px;
+    font-size: 1em;
+    background: #eee; 
+    border-radius: 6px;
+    border: 0px;
+    cursor: pointer;
 }

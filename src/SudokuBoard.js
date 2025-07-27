@@ -14,7 +14,7 @@ function getBoxIndex(row, col) {
   return Math.floor(row / 3) * 3 + Math.floor(col / 3);
 }
 
-const SudokuBoard = ({ boardStr }) => {
+const SudokuBoard = ({ boardStr, resetTimer }) => {
   const [board, setBoard] = useState(parseBoard(boardStr));
   const [initialBoard, setInitialBoard] = useState(parseBoard(boardStr));
   const [selected, setSelected] = useState({ row: 0, col: 0 });
@@ -76,7 +76,9 @@ const SudokuBoard = ({ boardStr }) => {
       const newBoard = board.map(arr => arr.slice());
       newBoard[row][col] = val ? Number(val) : 0;
       setBoard(newBoard);
-      setNotes({ ...notes, [`${row}-${col}`]: [] });
+      // TODO: check for incorrect or correct
+      setNotes({ ...notes, [`${row}-${col}`]: [] }); // TODO hide them instead of empty
+      checkCell(row,col,val);
     }
   };
 
@@ -101,6 +103,26 @@ const SudokuBoard = ({ boardStr }) => {
     );
   };
 
+  const checkCell = (row, col, val) => {
+    console.log(board)
+    let first_row = Math.floor(row / 3) * 3;
+    let first_col = Math.floor(col / 3) * 3;
+    console.log(`BOX: ${board[first_row][first_col]}, [${first_row}, ${first_col}]`);
+    for (let i = 0; i < 9; i++) {
+        // console.log(`${val} vs col ${board[i][col]}`)
+        // if (board[i][col] == val) {
+        //     console.log("col: WRONG");
+        // }
+        // else if (board[row][i] == val) {
+        //     console.log("row: WRONG")
+        // }
+        console.log(`${first_row + (i % 3)}, ${first_col + Math.floor(i / 3)}: ${board[first_row + (i % 3)][first_col + (i / 3)]}`);
+        if (board[first_row + (i % 3)][first_col + (i / 3)] == val) {
+            console.log("box: WRONG");
+        }
+    }
+  }
+
   // Generate new board from API
   const handleGenerateNewBoard = () => {
     fetch("https://sudoku-ro71.onrender.com/boards", {
@@ -122,6 +144,13 @@ const SudokuBoard = ({ boardStr }) => {
         alert("Error generating new board.");
         console.error("API error:", error);
       });
+  };
+
+  const handleClearBoard = () => {
+    setBoard(parseBoard(boardStr));
+    setInitialBoard(parseBoard(boardStr));
+    setNotes({});
+    if (resetTimer) resetTimer();
   };
 
   return (
@@ -181,9 +210,14 @@ const SudokuBoard = ({ boardStr }) => {
       <button
         className="generate-btn"
         onClick={handleGenerateNewBoard}
-        style={{ marginLeft: "10px", marginTop: "20px", padding: "6px 16px", fontSize: "1em", background: "#eee", borderRadius: "6px", cursor: "pointer" }}
       >
         Generate New Board
+      </button>
+      <button
+        className="clear-btn"
+        onClick={handleClearBoard}
+      >
+        Clear
       </button>
     </div>
   );
