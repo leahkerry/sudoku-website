@@ -20,6 +20,7 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   const [selected, setSelected] = useState({ row: 0, col: 0 });
   const [notes, setNotes] = useState({});
   const [notesMode, setNotesMode] = useState(false);
+  const [incorrectCells, setIncorrectCells] = useState({});
 
   // Update board when boardStr changes (for new board)
   useEffect(() => {
@@ -42,6 +43,18 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
         row = row > 0 ? row - 1 : row;
       } else if (e.key === "ArrowDown") {
         row = row < 8 ? row + 1 : row;
+      } else if (
+        (e.key === "Backspace" || 
+        e.key === "Delete") && 
+        initialBoard[row][col] === 0
+       ) {
+        const newBoard = board.map(arr => arr.slice());
+        newBoard[row][col] = 0;
+        setBoard(newBoard);
+        setNotes({ ...notes, [`${row}-${col}`]: [] });
+        setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
+        e.preventDefault();
+        return;
       } else {
         return;
       }
@@ -57,6 +70,7 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   };
 
   const handleInput = (e, row, col) => {
+    console.log(e.target.value);
     const val = e.target.value.replace(/[^1-9]/, "");
     if (notesMode) {
       // Notes mode: toggle note number in cell
@@ -104,23 +118,28 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   };
 
   const checkCell = (row, col, val) => {
-    console.log(board)
     let first_row = Math.floor(row / 3) * 3;
     let first_col = Math.floor(col / 3) * 3;
-    console.log(`BOX: ${board[first_row][first_col]}, [${first_row}, ${first_col}]`);
+    let wrong = false;
     for (let i = 0; i < 9; i++) {
         // console.log(`${val} vs col ${board[i][col]}`)
-        // if (board[i][col] == val) {
-        //     console.log("col: WRONG");
-        // }
-        // else if (board[row][i] == val) {
-        //     console.log("row: WRONG")
-        // }
-        console.log(`${first_row + (i % 3)}, ${first_col + Math.floor(i / 3)}: ${board[first_row + (i % 3)][first_col + (i / 3)]}`);
-        if (board[first_row + (i % 3)][first_col + (i / 3)] == val) {
+        if (board[i][col] === val) {
+            console.log("col: WRONG");
+            wrong = true;
+        }
+        else if (board[row][i] === val) {
+            console.log("row: WRONG")
+            wrong = true
+        }
+        if (board[first_row + Math.floor(i / 3)][first_col + (i % 3)] === val) {
             console.log("box: WRONG");
+            wrong = true;
         }
     }
+    setIncorrectCells(prev => ({
+        ...prev,
+        [`${row}-${col}`]: wrong
+    }));
   }
 
   // Generate new board from API
@@ -179,7 +198,12 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
                   >
                     {/* Always show the main number if present */}
                     {cell !== 0 && (
-                      <span className="cell-value">{cell}</span>
+                      <span
+                            className={`cell-value${incorrectCells[`${row}-${col}`] ? " incorrect" : ""}`}
+                        >
+                            {cell}
+                        </span>
+                    //   <span className="cell-value">{cell}</span>
                     )}
                     {/* Show notes overlay if notes exist */}
                     {renderNotes(row, col)}
