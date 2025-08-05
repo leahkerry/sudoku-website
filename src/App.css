@@ -153,6 +153,10 @@
   pointer-events: none;
 }
 
+.cell-value.incorrect {
+  color: rgb(129, 20, 20);
+}
+
 .clue-cell {
   background: #eeecf3; /* gray for initial clues */
 }
