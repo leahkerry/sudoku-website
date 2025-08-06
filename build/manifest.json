@@ -16,11 +16,14 @@
       "src": "logo512.png",
       "type": "image/png",
       "sizes": "512x512"
+<<<<<<< HEAD
     },
     {
       "src": "sudokucat.png",
       "type": "image/png",
       "sizes": "120x120"
+=======
+>>>>>>> 9412a9ddaae50d79a87a2d3e449a21d78bb9eff4
     }
   ],
   "start_url": ".",

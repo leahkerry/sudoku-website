@@ -56,15 +56,19 @@ function App() {
   }, []);
 
   return (
+    
     <div className="App">
       <h1>Sudoku!!</h1>
-      <div style={{ fontSize: "1.5em", marginBottom: "10px" }}>
-        Timer: {formatTime(seconds)}
-      </div>
+      
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <SudokuBoard boardStr={boardStr} resetTimer={resetTimer}/>
+        <div>
+            <div style={{ fontSize: "1.5em", marginBottom: "10px" }}>
+            Timer: {formatTime(seconds)}
+            </div>
+            <SudokuBoard boardStr={boardStr} resetTimer={resetTimer}/>
+        </div>
       )}
     </div>
   );

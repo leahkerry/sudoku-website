@@ -154,7 +154,8 @@
 }
 
 .cell-value.incorrect {
-  color: rgb(129, 20, 20);
+  color: rgb(218, 0, 134);
+  /* background:rgb(129, 20, 20); */
 }
 
 .clue-cell {
@@ -171,4 +172,28 @@ button {
     border-radius: 6px;
     border: 0px;
     cursor: pointer;
+}
+
+.number-pad {
+  display: grid;
+  gap: 8px;
+  justify-content: center;
+  grid-template-columns:repeat(5, 50px);
+  grid-auto-flow: row; 
+
+}
+
+.number-pad-btn {
+  width: 38px;
+  height: 38px;
+  font-size: 1.1em;
+  border-radius: 6px;
+  border: 0px solid #a5a5a5;
+  background: #dcdbdb;
+  cursor: pointer;
+  margin: 2px;
+  transition: background 0.2s;
+}
+.number-pad-btn:hover {
+  background: #e0e0e0;
 }
