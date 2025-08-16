@@ -77,11 +77,16 @@
 }
 
 .sudoku-cell.selected {
-  background: #d2c0ff;
+  background: #b9a6ff;
 }
 
 .sudoku-cell.highlight {
   background: #efd6ffb2;
+}
+
+.same-value {
+  background: #cda2e6b2 !important;
+  /* or any color you like for highlighting same numbers */
 }
 
 .cell-input {
@@ -110,6 +115,22 @@
 .notes-mode-btn.active {
   background: #ebdaff;
   border-color: #2f414a;
+}
+
+.difficulty-btn {
+  padding: 6px 16px;
+  font-size: 1em;
+  background: #eee;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  cursor: pointer;
+  margin: 2px;
+  transition: background 0.2s;
+}
+.difficulty-btn.active {
+  background: #d2c0ff;
+  border-color: #2f414a;
+  font-weight: bold;
 }
 
 .cell-notes {
@@ -165,7 +186,7 @@
 button {
     /* background: black; */
     margin-left: 10px;
-    margin-top: 20px;
+    margin-top: 10px;
     padding: 6px 16px;
     font-size: 1em;
     background: #eee; 
@@ -176,8 +197,9 @@ button {
 
 .number-pad {
   display: grid;
-  gap: 8px;
+  gap: 4px;
   justify-content: center;
+  align-items: center;
   grid-template-columns:repeat(5, 50px);
   grid-auto-flow: row; 
 

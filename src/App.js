@@ -9,13 +9,17 @@ function formatTime(seconds) {
   return `${h}:${m}:${s}`;
 }
 
+const DIFFICULTIES = ["easy", "med", "hard"];
+
 function App() {
   const [boardStr, setBoardStr] = useState("");
   const [loading, setLoading] = useState(true);
   const [seconds, setSeconds] = useState(0);
+  const [difficulty, setDifficulty] = useState("easy");
+  const [boards, setBoards] = useState({ easy: [], med: [], hard: [] });
   const timerRef = useRef();
 
-    // Timer logic
+  // Timer logic
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setSeconds(sec => sec + 1);
@@ -27,48 +31,87 @@ function App() {
     setSeconds(0);
   };
 
+  // Fetch boards on mount
   useEffect(() => {
-    fetch("https://sudoku-ro71.onrender.com/boards", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify()
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        // console.log(response.json())
-        return response.json();
-      })
-      .then(data => {
-        // Assume data.board is the string
-        setBoardStr(data[0] || "");
-        setLoading(false);
-        setSeconds(0);
-      })
-      .catch(error => {
-        setBoardStr("Error loading board.");
-        setLoading(false);
-        console.error("API error:", error);
-      });
+    setLoading(true);
+    // Helper to fetch boards
+    const fetchBoards = async (diff, count) => {
+      const boardsArr = [];
+      for (let i = 0; i < count; i++) {
+        const res = await fetch(`https://sudoku-ro71.onrender.com/boards/${diff}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify()
+        });
+        const data = await res.json();
+        boardsArr.push(data[0]);
+      }
+      return boardsArr;
+    };
+
+    (async () => {
+      // Generate 2 easy, 2 med, 2 hard boards in background
+      const [easyBoards, medBoards, hardBoards] = await Promise.all([
+        fetchBoards("easy", 2),
+        fetchBoards("med", 2),
+        fetchBoards("hard", 2)
+      ]);
+      setBoards({ easy: easyBoards, med: medBoards, hard: hardBoards });
+      setBoardStr(easyBoards[0] || "");
+      setLoading(false);
+      setSeconds(0);
+    })();
   }, []);
 
+  // Handle difficulty change
+  const handleDifficultyChange = async (diff) => {
+    setDifficulty(diff);
+    resetTimer();
+    // Use a pre-generated board if available, else fetch a new one
+    if (boards[diff] && boards[diff].length > 0) {
+      setBoardStr(boards[diff][0]);
+      setBoards(prev => ({
+        ...prev,
+        [diff]: prev[diff].slice(1) // Remove used board
+      }));
+    } else {
+      setLoading(true);
+      const res = await fetch(`https://sudoku-ro71.onrender.com/boards/${diff}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify()
+      });
+      const data = await res.json();
+      setBoardStr(data[0] || "");
+      setLoading(false);
+    }
+  };
+
   return (
-    
     <div className="App">
       <h1>Sudoku!!</h1>
       
+      <div style={{ marginBottom: "16px" }}>
+        {DIFFICULTIES.map(diff => (
+          <button
+            key={diff}
+            className={`difficulty-btn${difficulty === diff ? " active" : ""}`}
+            onClick={() => handleDifficultyChange(diff)}
+            style={{ marginRight: "8px" }}
+          >
+            {diff.charAt(0).toUpperCase() + diff.slice(1)}
+          </button>
+        ))}
+      </div>
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <div>
+        <>
             <div style={{ fontSize: "1.5em", marginBottom: "10px" }}>
             Timer: {formatTime(seconds)}
             </div>
-            <SudokuBoard boardStr={boardStr} resetTimer={resetTimer}/>
-        </div>
+            <SudokuBoard boardStr={boardStr} resetTimer={resetTimer} />
+        </>
       )}
     </div>
   );

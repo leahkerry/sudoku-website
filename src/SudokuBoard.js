@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 
 function parseBoard(boardStr) {
+//   const [numCells, setNumCells] = useState(0);
+//   setNumCells(boardStr.split('0').length - 1);
+//   console.log(`num cells: ${numCells}`);
   const arr = boardStr.replace(/[^0-9]/g, "").split("").map(Number);
   const board = [];
   for (let i = 0; i < 9; i++) {
@@ -21,7 +24,8 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   const [notes, setNotes] = useState({});
   const [notesMode, setNotesMode] = useState(false);
   const [incorrectCells, setIncorrectCells] = useState({});
-
+  const [shiftHeld, setShiftHeld] = useState(false);
+  const [numCells, setNumCells] = useState(0);
   // Update board when boardStr changes (for new board)
   useEffect(() => {
     setBoard(parseBoard(boardStr));
@@ -48,49 +52,73 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
         e.key === "Delete") && 
         initialBoard[row][col] === 0
        ) {
-        const newBoard = board.map(arr => arr.slice());
-        newBoard[row][col] = 0;
-        setBoard(newBoard);
-        setNotes({ ...notes, [`${row}-${col}`]: [] });
-        setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
+        const notesActive = notesMode || shiftHeld;
+        if (notesActive || board[row][col] == 0) {
+            setNotes({ ...notes, [`${row}-${col}`]: [] });
+        } else {
+            const newBoard = board.map(arr => arr.slice());
+            newBoard[row][col] = 0;
+            setBoard(newBoard);
+            setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
+        }
         e.preventDefault();
         return;
-      } else if (/^[1-9]$/.test(e.key) && initialBoard[row][col] === 0) {
-            // Number input
-            if (notesMode) {
-                const key = `${row}-${col}`;
-                let cellNotes = notes[key] || [];
-                if (cellNotes.includes(e.key)) {
-                cellNotes = cellNotes.filter(n => n !== e.key);
-                } else {
-                cellNotes = [...cellNotes, e.key].sort();
-                }
-                setNotes({ ...notes, [key]: cellNotes });
-            } else {
-                const newBoard = board.map(arr => arr.slice());
-                newBoard[row][col] = Number(e.key);
-                setBoard(newBoard);
-                setNotes({ ...notes, [`${row}-${col}`]: [] });
-                checkCell(row, col, e.key);
-            }
-            e.preventDefault();
-            return;
+      } else if (e.key === "Shift") {
+        setShiftHeld(true);
+        return;
+      } else if (
+        /^[1-9]$/.test(e.key) && 
+        initialBoard[row][col] === 0
+      ) {
+        const notesActive = notesMode || shiftHeld;
+        if (notesActive) {
+          // Notes mode: toggle note number in cell
+          const key = `${row}-${col}`;
+          let cellNotes = notes[key] || [];
+          if (cellNotes.includes(e.key)) {
+            cellNotes = cellNotes.filter(n => n !== e.key);
+          } else {
+            cellNotes = [...cellNotes, e.key].sort();
+          }
+          const newBoard = board.map(arr => arr.slice());
+          newBoard[row][col] = 0;
+          setBoard(newBoard);
+          setNotes({ ...notes, [key]: cellNotes });
+        } else {
+          // Normal mode: set cell value
+        //   console.log("setting bb");
+          const newBoard = board.map(arr => arr.slice());
+          newBoard[row][col] = Number(e.key);
+          setBoard(newBoard);
+        //   setNotes({ ...notes, [`${row}-${col}`]: [] });
+          checkCell(row, col, e.key);
+        }
+        e.preventDefault();
+        return;
       } else {
         return;
       }
       setSelected({ row, col });
       e.preventDefault();
     };
+    const handleKeyUp = (e) => {
+      if (e.key === "Shift") {
+        setShiftHeld(false);
+      }
+    };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selected]);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [selected, board, notes, notesMode, shiftHeld, initialBoard]);
 
   const handleCellClick = (row, col) => {
     setSelected({ row, col });
   };
 
   const handleInput = (e, row, col) => {
-    console.log(e.target.value);
     const val = e.target.value.replace(/[^1-9]/, "");
     if (notesMode) {
       // Notes mode: toggle note number in cell
@@ -106,11 +134,13 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
       }
     } else {
       // Only allow editing blank cells (not initial clues)
+      console.log("handle input");
       if (initialBoard[row][col] !== 0) return;
       const newBoard = board.map(arr => arr.slice());
       newBoard[row][col] = val ? Number(val) : 0;
       setBoard(newBoard);
       // TODO: check for incorrect or correct
+      console.log("not setting notes to clear")
       setNotes({ ...notes, [`${row}-${col}`]: [] }); // TODO hide them instead of empty
       checkCell(row,col,val);
     }
@@ -119,7 +149,7 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   const renderNotes = (row, col) => {
     const key = `${row}-${col}`;
     const cellNotes = notes[key] || [];
-    if (cellNotes.length === 0) return null;
+    if (cellNotes.length === 0 || board[row][col] != 0) return null;
     return (
       <div className="cell-notes">
         {Array.from({ length: 9 }, (_, i) => {
@@ -143,17 +173,17 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
     let wrong = false;
     // console.log(`Checking cell: ${val}`);
     for (let i = 0; i < 9; i++) {
-        console.log(`${val} vs col ${board[i][col]}`)
+        // console.log(`${val} vs col ${board[i][col]}`)
         if (board[i][col] == val) {
-            console.log("col: WRONG");
+            // console.log("col: WRONG");
             wrong = true;
         }
         else if (board[row][i] == val) {
-            console.log("row: WRONG")
+            // console.log("row: WRONG")
             wrong = true;
         }
         if (board[first_row + Math.floor(i / 3)][first_col + (i % 3)] == val) {
-            console.log("box: WRONG");
+            // console.log("box: WRONG");
             wrong = true;
         }
     }
@@ -198,7 +228,8 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
 
   // Generate new board from API
   const handleGenerateNewBoard = () => {
-    fetch("https://sudoku-ro71.onrender.com/boards", {
+    let diff = "EASY";
+    fetch(`https://sudoku-ro71.onrender.com/boards${diff}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -277,40 +308,33 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
                   (selected.row !== null &&
                     selected.col !== null &&
                     getBoxIndex(selected.row, selected.col) === getBoxIndex(row, col));
-                // Gray for initial clues, white for blanks
+                const selectedValue = board[selected.row][selected.col];
+                const isSameValue =
+                  cell !== 0 &&
+                  selectedValue !== 0 &&
+                  cell === selectedValue &&
+                  !(isSelected); // Optionally exclude the selected cell itself
+
                 const cellClass =
-                  `sudoku-cell${isSelected ? " selected" : ""}${highlight && !isSelected ? " highlight" : ""}` +
-                  (initialBoard[row][col] !== 0 ? " clue-cell" : "");
+                  `sudoku-cell${isSelected ? " selected" : ""}` +
+                  (highlight && !isSelected ? " highlight" : "") +
+                  (initialBoard[row][col] !== 0 ? " clue-cell" : "") +
+                  (isSameValue ? " same-value" : "");
+
                 return (
                   <td
                     key={col}
                     className={cellClass}
                     onClick={() => handleCellClick(row, col)}
                   >
-                    {/* Always show the main number if present */}
                     {cell !== 0 && (
                       <span
-                            className={`cell-value${incorrectCells[`${row}-${col}`] ? " incorrect" : ""}`}
-                        >
-                            {cell}
-                        </span>
-                    //   <span className="cell-value">{cell}</span>
+                        className={`cell-value${incorrectCells[`${row}-${col}`] ? " incorrect" : ""}`}
+                      >
+                        {cell}
+                      </span>
                     )}
-                    {/* Show notes overlay if notes exist */}
                     {renderNotes(row, col)}
-                    {/* Input for editing (hidden visually, but used for input) */}
-                    {/* <input
-                      type="text"
-                      maxLength="1"
-                      value=""
-                      onChange={e => handleInput(e, row, col)}
-                      className="cell-input"
-                      style={{ opacity: 0, position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
-                    //   readOnly={false}
-                      readOnly={false}
-                      tabIndex={-1}
-                    //   onFocus={e => e.target.blur()}
-                    /> */}
                   </td>
                 );
               })}
