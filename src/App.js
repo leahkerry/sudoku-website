@@ -9,7 +9,7 @@ function formatTime(seconds) {
   return `${h}:${m}:${s}`;
 }
 
-const DIFFICULTIES = ["easy", "med", "hard"];
+const DIFFICULTIES = ["easy"]; // TODO: fix
 
 function App() {
   const [boardStr, setBoardStr] = useState("");
@@ -53,8 +53,8 @@ function App() {
       // Generate 2 easy, 2 med, 2 hard boards in background
       const [easyBoards, medBoards, hardBoards] = await Promise.all([
         fetchBoards("easy", 2),
-        fetchBoards("med", 2),
-        fetchBoards("hard", 2)
+        fetchBoards("easy", 2),
+        fetchBoards("easy", 2)
       ]);
       setBoards({ easy: easyBoards, med: medBoards, hard: hardBoards });
       setBoardStr(easyBoards[0] || "");
@@ -87,6 +87,18 @@ function App() {
     }
   };
 
+  const generateNewBoard = async (diff = difficulty) => {
+    setLoading(true);
+    const res = await fetch(`https://sudoku-ro71.onrender.com/boards/${diff}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify()
+    });
+    const data = await res.json();
+    setBoardStr(data[0] || "");
+    setLoading(false);
+    resetTimer();
+  };
   return (
     <div className="App">
       <h1>Sudoku!!</h1>
@@ -110,7 +122,12 @@ function App() {
             <div style={{ fontSize: "1.5em", marginBottom: "10px" }}>
             Timer: {formatTime(seconds)}
             </div>
-            <SudokuBoard boardStr={boardStr} resetTimer={resetTimer} />
+            <SudokuBoard 
+             boardStr={boardStr} 
+             resetTimer={resetTimer} 
+             onGenerateNewBoard={generateNewBoard}
+             onClearBoard={() => setBoardStr(boardStr)}
+             />
         </>
       )}
     </div>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
+function getOrigNum(boardStr) {
+    return boardStr.split('0').length - 1;
+}
+
 function parseBoard(boardStr) {
-//   const [numCells, setNumCells] = useState(0);
-//   setNumCells(boardStr.split('0').length - 1);
-//   console.log(`num cells: ${numCells}`);
+
   const arr = boardStr.replace(/[^0-9]/g, "").split("").map(Number);
   const board = [];
   for (let i = 0; i < 9; i++) {
@@ -25,13 +27,14 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   const [notesMode, setNotesMode] = useState(false);
   const [incorrectCells, setIncorrectCells] = useState({});
   const [shiftHeld, setShiftHeld] = useState(false);
-  const [numCells, setNumCells] = useState(0);
+  const [numCells, setNumCells] = useState(getOrigNum(boardStr));
   // Update board when boardStr changes (for new board)
   useEffect(() => {
     setBoard(parseBoard(boardStr));
     setInitialBoard(parseBoard(boardStr));
     setNotes({});
     setSelected({ row: 0, col: 0 });
+    setNumCells(getOrigNum(boardStr));
   }, [boardStr]);
 
   // Keyboard navigation
@@ -59,6 +62,10 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
             const newBoard = board.map(arr => arr.slice());
             newBoard[row][col] = 0;
             setBoard(newBoard);
+            let currCellsRemaining = numCells - 1
+            console.log(`nnum cells left now: ${currCellsRemaining}`)
+            setNumCells(currCellsRemaining);
+
             setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
         }
         e.preventDefault();
@@ -86,11 +93,19 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
           setNotes({ ...notes, [key]: cellNotes });
         } else {
           // Normal mode: set cell value
-        //   console.log("setting bb");
           const newBoard = board.map(arr => arr.slice());
           newBoard[row][col] = Number(e.key);
           setBoard(newBoard);
         //   setNotes({ ...notes, [`${row}-${col}`]: [] });
+          let currCellsRemaining = numCells - 1
+          console.log(`nnum cells left now: ${currCellsRemaining}`)
+          if (currCellsRemaining == 0) {
+            console.log("filled");
+
+          }
+          setNumCells(currCellsRemaining);
+          
+          
           checkCell(row, col, e.key);
         }
         e.preventDefault();
@@ -118,33 +133,35 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
     setSelected({ row, col });
   };
 
-  const handleInput = (e, row, col) => {
-    const val = e.target.value.replace(/[^1-9]/, "");
-    if (notesMode) {
-      // Notes mode: toggle note number in cell
-      const key = `${row}-${col}`;
-      let cellNotes = notes[key] || [];
-      if (val) {
-        if (cellNotes.includes(val)) {
-          cellNotes = cellNotes.filter(n => n !== val);
-        } else {
-          cellNotes = [...cellNotes, val].sort();
-        }
-        setNotes({ ...notes, [key]: cellNotes });
-      }
-    } else {
-      // Only allow editing blank cells (not initial clues)
-      console.log("handle input");
-      if (initialBoard[row][col] !== 0) return;
-      const newBoard = board.map(arr => arr.slice());
-      newBoard[row][col] = val ? Number(val) : 0;
-      setBoard(newBoard);
-      // TODO: check for incorrect or correct
-      console.log("not setting notes to clear")
-      setNotes({ ...notes, [`${row}-${col}`]: [] }); // TODO hide them instead of empty
-      checkCell(row,col,val);
-    }
-  };
+//   const handleInput = (e, row, col) => {
+//     const val = e.target.value.replace(/[^1-9]/, "");
+//     if (notesMode) {
+//       // Notes mode: toggle note number in cell
+//       const key = `${row}-${col}`;
+//       let cellNotes = notes[key] || [];
+//       if (val) {
+//         if (cellNotes.includes(val)) {
+//           cellNotes = cellNotes.filter(n => n !== val);
+//         } else {
+//           cellNotes = [...cellNotes, val].sort();
+//         }
+//         setNotes({ ...notes, [key]: cellNotes });
+//       }
+//     } else {
+//       // Only allow editing blank cells (not initial clues)
+//       console.log("handle input");
+//       if (initialBoard[row][col] !== 0) return;
+//       const newBoard = board.map(arr => arr.slice());
+//       newBoard[row][col] = val ? Number(val) : 0;
+//       setBoard(newBoard);
+//       // TODO: check for incorrect or correct
+//       console.log("not setting notes to clear")
+//       setNotes({ ...notes, [`${row}-${col}`]: [] }); // TODO hide them instead of empty
+//       checkCell(row,col,val);
+//       setNumCells(numCells - 1);
+//       console.log(`nnum cells left now: ${numCells}`)
+//     }
+//   };
 
   const renderNotes = (row, col) => {
     const key = `${row}-${col}`;
@@ -228,8 +245,8 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
 
   // Generate new board from API
   const handleGenerateNewBoard = () => {
-    let diff = "EASY";
-    fetch(`https://sudoku-ro71.onrender.com/boards${diff}`, {
+    let diff = "easy";
+    fetch(`https://sudoku-ro71.onrender.com/boards/${diff}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -239,10 +256,12 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
       .then(response => response.json())
       .then(data => {
         // Assume data[0] is the board string
-        setBoard(parseBoard(data[0] || ""));
-        setInitialBoard(parseBoard(data[0] || ""));
+        setBoard(parseBoard(data[data.length - 1] || ""));
+        setInitialBoard(parseBoard(data[data.length - 1] || ""));
         setNotes({});
+        setNumCells(getOrigNum(data[data.length - 1] || ""));
         setSelected({ row: 0, col: 0 });
+        setIncorrectCells({});
       })
       .catch(error => {
         alert("Error generating new board.");
@@ -253,7 +272,9 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   const handleClearBoard = () => {
     setBoard(parseBoard(boardStr));
     setInitialBoard(parseBoard(boardStr));
+    setNumCells(getOrigNum(boardStr));
     setNotes({});
+    setIncorrectCells({});
     if (resetTimer) resetTimer();
   };
 
