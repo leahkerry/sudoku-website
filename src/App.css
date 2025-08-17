@@ -1,3 +1,6 @@
+h1 {
+    margin: 10px;
+}
 .App {
   text-align: center;
 }
@@ -16,6 +19,7 @@
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
+  /* max-height: 100vh; */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -40,7 +44,7 @@
 .sudoku-table {
   border-collapse: collapse;
   margin: 0 auto;
-  box-shadow: 0 0 0 6px #222; /* thick outer border */
+  box-shadow: 0 0 0 3px #26013f; /* thick outer border */
 }
 
 .sudoku-cell {
@@ -49,7 +53,7 @@
   height: 40px;
   text-align: center;
   position: relative;
-  background: #fff;
+  background: #ffffff;
 }
 
 /* Thicker lines for box boundaries */
@@ -98,14 +102,29 @@
   background: transparent;
 }
 
+.timer-diff-area {
+    display: flex;
+    justify-content: center;
+    /* width: 360px; */
+    /* align-items: center; */
+    gap: 2.5rem;
+}
+.optn-btn-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    margin-top: 20px;
+    padding: 5px;
+    gap: 2px;
+}
 .notes-section {
-  margin-top: 20px;
+  margin-top: 0px;
 }
 
 .notes-mode-btn {
-  margin-bottom: 10px;
-  margin-top: 20px;
-  padding: 6px 16px;
+  /* margin-bottom: 10px;
+  margin-top: 20px; */
+  /* padding: 6px 16px; */
   font-size: 1em;
   background: #eee;
   /* border: 2px solid #222; */
@@ -185,14 +204,15 @@
 
 button {
     /* background: black; */
-    margin-left: 10px;
-    margin-top: 10px;
+    /* margin-left: 10px; */
+    /* margin-top: 10px; */
     padding: 6px 16px;
     font-size: 1em;
     background: #eee; 
     border-radius: 6px;
     border: 0px;
     cursor: pointer;
+    color:rgb(0, 3, 25);
 }
 
 .number-pad {
