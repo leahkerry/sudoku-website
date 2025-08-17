@@ -43,7 +43,7 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
     const handleKeyDown = (e) => {
       if (selected.row === null || selected.col === null) return;
       let { row, col } = selected;
-      const notesActive = notesMode || e.shiftKey;
+    //   const notesActive = notesMode || e.shiftKey;
     //   setNotesMode(notesMode || e.shiftKey);
     //   if (e.key === "Shift") {
     //     // console.log("shifting");
@@ -75,7 +75,7 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
         /^[1-9]$/.test(e.key) && 
         initialBoard[row][col] === 0
       ) {
-        handleNumberPadInput(e.key, notesActive);
+        handleNumberPadInput(e.key);
         e.preventDefault();
         return;
       } else {
@@ -200,14 +200,17 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
   };
 
   // Handler for number pad buttons
-  const handleNumberPadInput = (num, notesActive) => {
+  const handleNumberPadInput = (num) => {
     const { row, col } = selected;
-    console.log(`${num} shift held: ${shiftHeld}`);
     // const notesActive = notesMode || shiftHeld;
     if (row === null || col === null) return;
     if (initialBoard[row][col] !== 0) return; // Don't allow editing clues
-
-    if (notesActive) {
+    // if (num === board[row][col]) return
+    const newBoard = board.map(arr => arr.slice());
+    const prefilled = newBoard[row][col] != 0;
+    const prevNum = newBoard[row][col];
+    const prevCorrect = !incorrectCells[`${row}-${col}`];
+    if (notesMode) {
         // Notes mode: toggle note number in cell
         const key = `${row}-${col}`;
         let cellNotes = notes[key] || [];
@@ -216,32 +219,44 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
         } else {
         cellNotes = [...cellNotes, num].sort();
         }
-        const newBoard = board.map(arr => arr.slice());
         newBoard[row][col] = 0;
         setBoard(newBoard);
+        // if prev board was correct, increase num remaining
+        if (prevCorrect) {
+            let currCellsRemaining = numCells + 1
+            console.log(`nnum cells left now: ${currCellsRemaining}`)
+            setNumCells(currCellsRemaining);
+        }
+        
         setNotes({ ...notes, [key]: cellNotes });
     } else {
         // Normal mode: set cell value
-        const newBoard = board.map(arr => arr.slice());
         const prefilled = newBoard[row][col] != 0;
+        // if number isnt same as previously typed
         if (newBoard[row][col] != Number(num)) {
-        newBoard[row][col] = Number(num);
-        setBoard(newBoard);
-        const correct = checkCell(row, col, num);
-        //   setNotes({ ...notes, [`${row}-${col}`]: [] });
+            console.log(`new num: ${Number(num)}, old: ${newBoard[row][col]}`)
+            newBoard[row][col] = Number(num); // set new
+            setBoard(newBoard);
+            let correct = checkCell(row, col, num);
 
-        // if cell is checked and original cell val not 0
-        if (!prefilled && correct) {
-            let currCellsRemaining = numCells - 1
-            console.log(`nnum cells left now: ${currCellsRemaining}`)
+            // if cell is correct and previous was not correct
+            if (correct && (prevNum == 0 || prevCorrect == false)) {
+                let currCellsRemaining = numCells - 1
+                console.log(`num cells left now: ${currCellsRemaining}, correct and prev not correct`)
 
-            if (currCellsRemaining == 0) {
-                console.log("filled");
-                if (typeof onFinish === "function") onFinish();
-                setFinished(true);
+                if (currCellsRemaining == 0) {
+                    console.log("filled");
+                    if (typeof onFinish === "function") onFinish();
+                    setFinished(true);
+                }
+                setNumCells(currCellsRemaining);
+            } else if (!correct && prevCorrect && prevNum != 0) { // not correct and prev was correct
+                console.log(`num cells left now: ${numCells + 1}, not correct and prev was correct`)
+                setNumCells(numCells + 1);
             }
-            setNumCells(currCellsRemaining);
-        }
+                // if not correct and was previously incorrect, increment
+
+            // if cell was prefilled and is now correct, also decrement
         
         
         }
@@ -339,25 +354,26 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
           ))}
         </tbody>
       </table>
-      <button
-        className={`notes-mode-btn${notesMode ? " active" : ""}`}
-        onClick={() => setNotesMode(!notesMode)}
-      >
-        {notesMode ? "Exit Notes Mode" : "Enter Notes Mode"}
-      </button>
-      <button
-        className="generate-btn"
-        onClick={() => onGenerateNewBoard()}
-      >
-        Generate New Board
-      </button>
-      <button
-        className="clear-btn"
-        onClick={handleClearBoard}
-      >
-        Clear
-      </button>
-
+      <div className="optn-btn-container">
+        <button
+            className={`notes-mode-btn${notesMode ? " active" : ""}`}
+            onClick={() => setNotesMode(!notesMode)}
+        >
+            {notesMode ? "Exit Notes Mode" : "Enter Notes Mode"}
+        </button>
+        <button
+            className="generate-btn"
+            onClick={() => onGenerateNewBoard()}
+        >
+            Generate New Board
+        </button>
+        <button
+            className="clear-btn"
+            onClick={handleClearBoard}
+        >
+            Clear
+        </button>
+      </div>
       <div className="number-pad" style={{ marginTop: "20px" }}>
         {[1,2,3,4,5,6,7,8,9].map(num => (
           <button

@@ -119,24 +119,27 @@ function App() {
     <div className="App">
       <h1>Sudoku!!</h1>
       
-      <div style={{ marginBottom: "16px" }}>
-        {DIFFICULTIES.map(diff => (
-          <button
-            key={diff}
-            className={`difficulty-btn${difficulty === diff ? " active" : ""}`}
-            onClick={() => handleDifficultyChange(diff)}
-            style={{ marginRight: "8px" }}
-          >
-            {diff.charAt(0).toUpperCase() + diff.slice(1)}
-          </button>
-        ))}
-      </div>
+      
       {loading ? (
         <p>Loading...</p>
       ) : (
         <>
-            <div style={{ fontSize: "1.5em", marginBottom: "10px" }}>
-            Timer: {formatTime(seconds)}
+            <div className="timer-diff-area">
+                <div style={{ marginBottom: "16px" }}>
+                    {DIFFICULTIES.map(diff => (
+                    <button
+                        key={diff}
+                        className={`difficulty-btn${difficulty === diff ? " active" : ""}`}
+                        onClick={() => handleDifficultyChange(diff)}
+                        style={{ marginRight: "8px" }}
+                    >
+                        {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                    </button>
+                    ))}
+                </div>
+                <div style={{ fontSize: "1.5em", marginBottom: "10px" }}>
+                Timer: {formatTime(seconds)}
+                </div>
             </div>
             <SudokuBoard 
              boardStr={boardStr} 
