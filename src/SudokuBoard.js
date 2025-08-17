@@ -19,7 +19,7 @@ function getBoxIndex(row, col) {
   return Math.floor(row / 3) * 3 + Math.floor(col / 3);
 }
 
-const SudokuBoard = ({ boardStr, resetTimer }) => {
+const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}) => {
   const [board, setBoard] = useState(parseBoard(boardStr));
   const [initialBoard, setInitialBoard] = useState(parseBoard(boardStr));
   const [selected, setSelected] = useState({ row: 0, col: 0 });
@@ -28,6 +28,7 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   const [incorrectCells, setIncorrectCells] = useState({});
   const [shiftHeld, setShiftHeld] = useState(false);
   const [numCells, setNumCells] = useState(getOrigNum(boardStr));
+  const [finished, setFinished] = useState(false);
   // Update board when boardStr changes (for new board)
   useEffect(() => {
     setBoard(parseBoard(boardStr));
@@ -42,6 +43,18 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
     const handleKeyDown = (e) => {
       if (selected.row === null || selected.col === null) return;
       let { row, col } = selected;
+      const notesActive = notesMode || e.shiftKey;
+    //   setNotesMode(notesMode || e.shiftKey);
+    //   if (e.key === "Shift") {
+    //     // console.log("shifting");
+    //     setShiftHeld(true);
+    //     notesActive = true;
+    //   }
+      if (e.shiftKey) {
+        console.log("shifting")
+        setNotesMode(!notesMode);
+        e.preventDefault(); // Prevent default behavior for Shift
+      }
       if (e.key === "ArrowLeft") {
         col = col > 0 ? col - 1 : col;
       } else if (e.key === "ArrowRight") {
@@ -55,59 +68,14 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
         e.key === "Delete") && 
         initialBoard[row][col] === 0
        ) {
-        const notesActive = notesMode || shiftHeld;
-        if (notesActive || board[row][col] == 0) {
-            setNotes({ ...notes, [`${row}-${col}`]: [] });
-        } else {
-            const newBoard = board.map(arr => arr.slice());
-            newBoard[row][col] = 0;
-            setBoard(newBoard);
-            let currCellsRemaining = numCells - 1
-            console.log(`nnum cells left now: ${currCellsRemaining}`)
-            setNumCells(currCellsRemaining);
-
-            setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
-        }
+        handleNumberPadClear();
         e.preventDefault();
-        return;
-      } else if (e.key === "Shift") {
-        setShiftHeld(true);
         return;
       } else if (
         /^[1-9]$/.test(e.key) && 
         initialBoard[row][col] === 0
       ) {
-        const notesActive = notesMode || shiftHeld;
-        if (notesActive) {
-          // Notes mode: toggle note number in cell
-          const key = `${row}-${col}`;
-          let cellNotes = notes[key] || [];
-          if (cellNotes.includes(e.key)) {
-            cellNotes = cellNotes.filter(n => n !== e.key);
-          } else {
-            cellNotes = [...cellNotes, e.key].sort();
-          }
-          const newBoard = board.map(arr => arr.slice());
-          newBoard[row][col] = 0;
-          setBoard(newBoard);
-          setNotes({ ...notes, [key]: cellNotes });
-        } else {
-          // Normal mode: set cell value
-          const newBoard = board.map(arr => arr.slice());
-          newBoard[row][col] = Number(e.key);
-          setBoard(newBoard);
-        //   setNotes({ ...notes, [`${row}-${col}`]: [] });
-          let currCellsRemaining = numCells - 1
-          console.log(`nnum cells left now: ${currCellsRemaining}`)
-          if (currCellsRemaining == 0) {
-            console.log("filled");
-
-          }
-          setNumCells(currCellsRemaining);
-          
-          
-          checkCell(row, col, e.key);
-        }
+        handleNumberPadInput(e.key, notesActive);
         e.preventDefault();
         return;
       } else {
@@ -116,16 +84,17 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
       setSelected({ row, col });
       e.preventDefault();
     };
-    const handleKeyUp = (e) => {
-      if (e.key === "Shift") {
-        setShiftHeld(false);
-      }
-    };
+    // const handleKeyUp = (e) => {
+    //   if (e.key === "Shift") {
+    //     setNotesMode(false);
+    //     // console.log("not shifting");
+    //   }
+    // };
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    // window.addEventListener("keyup", handleKeyUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+    //   window.removeEventListener("keyup", handleKeyUp);
     };
   }, [selected, board, notes, notesMode, shiftHeld, initialBoard]);
 
@@ -133,35 +102,7 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
     setSelected({ row, col });
   };
 
-//   const handleInput = (e, row, col) => {
-//     const val = e.target.value.replace(/[^1-9]/, "");
-//     if (notesMode) {
-//       // Notes mode: toggle note number in cell
-//       const key = `${row}-${col}`;
-//       let cellNotes = notes[key] || [];
-//       if (val) {
-//         if (cellNotes.includes(val)) {
-//           cellNotes = cellNotes.filter(n => n !== val);
-//         } else {
-//           cellNotes = [...cellNotes, val].sort();
-//         }
-//         setNotes({ ...notes, [key]: cellNotes });
-//       }
-//     } else {
-//       // Only allow editing blank cells (not initial clues)
-//       console.log("handle input");
-//       if (initialBoard[row][col] !== 0) return;
-//       const newBoard = board.map(arr => arr.slice());
-//       newBoard[row][col] = val ? Number(val) : 0;
-//       setBoard(newBoard);
-//       // TODO: check for incorrect or correct
-//       console.log("not setting notes to clear")
-//       setNotes({ ...notes, [`${row}-${col}`]: [] }); // TODO hide them instead of empty
-//       checkCell(row,col,val);
-//       setNumCells(numCells - 1);
-//       console.log(`nnum cells left now: ${numCells}`)
-//     }
-//   };
+
 
   const renderNotes = (row, col) => {
     const key = `${row}-${col}`;
@@ -208,6 +149,11 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
         ...prev,
         [`${row}-${col}`]: wrong
     }));
+    if (wrong) {
+        return false;
+    } else {
+        return true;
+    }
     //     let first_row = Math.floor(row / 3) * 3;
     // let first_col = Math.floor(col / 3) * 3;
     // let wrongCells = {};
@@ -243,31 +189,6 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
     // }));
   }
 
-  // Generate new board from API
-  const handleGenerateNewBoard = () => {
-    let diff = "easy";
-    fetch(`https://sudoku-ro71.onrender.com/boards/${diff}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify()
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Assume data[0] is the board string
-        setBoard(parseBoard(data[data.length - 1] || ""));
-        setInitialBoard(parseBoard(data[data.length - 1] || ""));
-        setNotes({});
-        setNumCells(getOrigNum(data[data.length - 1] || ""));
-        setSelected({ row: 0, col: 0 });
-        setIncorrectCells({});
-      })
-      .catch(error => {
-        alert("Error generating new board.");
-        console.error("API error:", error);
-      });
-  };
 
   const handleClearBoard = () => {
     setBoard(parseBoard(boardStr));
@@ -279,27 +200,51 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
   };
 
   // Handler for number pad buttons
-  const handleNumberPadInput = (num) => {
+  const handleNumberPadInput = (num, notesActive) => {
     const { row, col } = selected;
+    console.log(`${num} shift held: ${shiftHeld}`);
+    // const notesActive = notesMode || shiftHeld;
     if (row === null || col === null) return;
     if (initialBoard[row][col] !== 0) return; // Don't allow editing clues
-    if (notesMode) {
-      // Notes mode: toggle note number in cell
-      const key = `${row}-${col}`;
-      let cellNotes = notes[key] || [];
-      if (cellNotes.includes(num)) {
+
+    if (notesActive) {
+        // Notes mode: toggle note number in cell
+        const key = `${row}-${col}`;
+        let cellNotes = notes[key] || [];
+        if (cellNotes.includes(num)) {
         cellNotes = cellNotes.filter(n => n !== num);
-      } else {
+        } else {
         cellNotes = [...cellNotes, num].sort();
-      }
-      setNotes({ ...notes, [key]: cellNotes });
+        }
+        const newBoard = board.map(arr => arr.slice());
+        newBoard[row][col] = 0;
+        setBoard(newBoard);
+        setNotes({ ...notes, [key]: cellNotes });
     } else {
-      // Normal mode: set cell value
-      const newBoard = board.map(arr => arr.slice());
-      newBoard[row][col] = Number(num);
-      setBoard(newBoard);
-      setNotes({ ...notes, [`${row}-${col}`]: [] });
-      checkCell(row, col, num);
+        // Normal mode: set cell value
+        const newBoard = board.map(arr => arr.slice());
+        const prefilled = newBoard[row][col] != 0;
+        if (newBoard[row][col] != Number(num)) {
+        newBoard[row][col] = Number(num);
+        setBoard(newBoard);
+        const correct = checkCell(row, col, num);
+        //   setNotes({ ...notes, [`${row}-${col}`]: [] });
+
+        // if cell is checked and original cell val not 0
+        if (!prefilled && correct) {
+            let currCellsRemaining = numCells - 1
+            console.log(`nnum cells left now: ${currCellsRemaining}`)
+
+            if (currCellsRemaining == 0) {
+                console.log("filled");
+                if (typeof onFinish === "function") onFinish();
+                setFinished(true);
+            }
+            setNumCells(currCellsRemaining);
+        }
+        
+        
+        }
     }
   };
 
@@ -308,15 +253,46 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
     const { row, col } = selected;
     if (row === null || col === null) return;
     if (initialBoard[row][col] !== 0) return;
-    const newBoard = board.map(arr => arr.slice());
-    newBoard[row][col] = 0;
-    setBoard(newBoard);
-    setNotes({ ...notes, [`${row}-${col}`]: [] });
-    setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
+    const notesActive = notesMode || shiftHeld;
+    // if empty and there are notes, delete notes
+    if (board[row][col] == 0) {
+        setNotes({ ...notes, [`${row}-${col}`]: [] });
+    } else {
+        const newBoard = board.map(arr => arr.slice());
+        newBoard[row][col] = 0;
+        setBoard(newBoard);
+        if (incorrectCells[`${row}-${col}`] === false) {
+            let currCellsRemaining = numCells + 1;
+            console.log(`nnum cells left now: ${currCellsRemaining}`);
+            setNumCells(currCellsRemaining);
+        }
+        
+
+        setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
+    }
+    // const { row, col } = selected;
+    // if (row === null || col === null) return;
+    // if (initialBoard[row][col] !== 0) return;
+    // const newBoard = board.map(arr => arr.slice());
+    // newBoard[row][col] = 0;
+    // setBoard(newBoard);
+    // setNotes({ ...notes, [`${row}-${col}`]: [] });
+    // setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
   };
 
   return (
     <div>
+      {finished && (
+        <div className="sudoku-overlay">
+            <div className="sudoku-overlay-content">
+            <h2>Congrats, you finished!</h2>
+            <p>Your time: {typeof time === "number" ? 
+                `${String(Math.floor(time / 3600)).padStart(2, "0")}:${String(Math.floor((time % 3600) / 60)).padStart(2, "0")}:${String(time % 60).padStart(2, "0")}` 
+                : time}</p>
+            <button onClick={() => onGenerateNewBoard()}>Generate New Board</button>
+            </div>
+        </div>
+        )}
       <table className="sudoku-table">
         <tbody>
           {board.map((rowArr, row) => (
@@ -371,7 +347,7 @@ const SudokuBoard = ({ boardStr, resetTimer }) => {
       </button>
       <button
         className="generate-btn"
-        onClick={handleGenerateNewBoard}
+        onClick={() => onGenerateNewBoard()}
       >
         Generate New Board
       </button>

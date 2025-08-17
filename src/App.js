@@ -9,7 +9,8 @@ function formatTime(seconds) {
   return `${h}:${m}:${s}`;
 }
 
-const DIFFICULTIES = ["easy"]; // TODO: fix
+// const DIFFICULTIES = ["easy", "med", "hard"]; 
+const DIFFICULTIES = ["easy", "med"]; // TODO: fix
 
 function App() {
   const [boardStr, setBoardStr] = useState("");
@@ -30,6 +31,15 @@ function App() {
   const resetTimer = () => {
     setSeconds(0);
   };
+  const stopTimer = () => {
+    clearInterval(timerRef.current);
+  };
+  const startTimer = () => {
+    timerRef.current = setInterval(() => {
+      setSeconds(sec => sec + 1);
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }
 
   // Fetch boards on mount
   useEffect(() => {
@@ -51,12 +61,16 @@ function App() {
 
     (async () => {
       // Generate 2 easy, 2 med, 2 hard boards in background
-      const [easyBoards, medBoards, hardBoards] = await Promise.all([
+    //   const [easyBoards, medBoards, hardBoards] = await Promise.all([
+    //     fetchBoards("easy", 2),
+    //     fetchBoards("med", 2),
+    //     fetchBoards("hard", 2)
+    //   ]);
+      const [easyBoards, medBoards] = await Promise.all([
         fetchBoards("easy", 2),
-        fetchBoards("easy", 2),
-        fetchBoards("easy", 2)
+        fetchBoards("med", 2)
       ]);
-      setBoards({ easy: easyBoards, med: medBoards, hard: hardBoards });
+      setBoards({ easy: easyBoards, med: medBoards});
       setBoardStr(easyBoards[0] || "");
       setLoading(false);
       setSeconds(0);
@@ -94,10 +108,12 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify()
     });
+    console.log(`diff: ${diff}`)
     const data = await res.json();
-    setBoardStr(data[0] || "");
+    setBoardStr(data[data.length - 1] || "");
     setLoading(false);
     resetTimer();
+    startTimer();
   };
   return (
     <div className="App">
@@ -126,7 +142,8 @@ function App() {
              boardStr={boardStr} 
              resetTimer={resetTimer} 
              onGenerateNewBoard={generateNewBoard}
-             onClearBoard={() => setBoardStr(boardStr)}
+             time={seconds}
+             onFinish={stopTimer}
              />
         </>
       )}
