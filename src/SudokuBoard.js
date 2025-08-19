@@ -1,12 +1,19 @@
+/*********************************************************
+ *                      SUDOKU BOARD
+ * Playable sudoku board with buttons to navigate number
+ * input, notes mode, generate new board, and clearing.
+ * User wins when all cells are filled correctly. 
+ *********************************************************/
+
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
+/*****************  DEFAULT FUNCTIONS  *******************/
 function getOrigNum(boardStr) {
     return boardStr.split('0').length - 1;
 }
 
 function parseBoard(boardStr) {
-
   const arr = boardStr.replace(/[^0-9]/g, "").split("").map(Number);
   const board = [];
   for (let i = 0; i < 9; i++) {
@@ -19,6 +26,22 @@ function getBoxIndex(row, col) {
   return Math.floor(row / 3) * 3 + Math.floor(col / 3);
 }
 
+/******************   SUDOKUBOARD LOGIC **************************
+ * Input: boardStr: all numbers in board
+ *        resetTimer function: reset timer for new boards
+ *        onGenerateNewBoard: allows user to click generate button
+ *        time: shows time on finish box
+ *        onFinish: stops timer when finished
+ * 
+ * Output: Playable sudoku board with user buttons such as notes mode,
+ *         generate new board, and clear
+ * 
+ * Effects: Can change timer, boardStr (to fill out numbers), 
+ * 
+ * Limitation: Cannot call api, change difficulty
+ * 
+ ****************************************************************/
+
 const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}) => {
   const [board, setBoard] = useState(parseBoard(boardStr));
   const [initialBoard, setInitialBoard] = useState(parseBoard(boardStr));
@@ -29,32 +52,26 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
   const [shiftHeld, setShiftHeld] = useState(false);
   const [numCells, setNumCells] = useState(getOrigNum(boardStr));
   const [finished, setFinished] = useState(false);
-  // Update board when boardStr changes (for new board)
+
+  /************************  USE EFFECTS  **************************/
+
+  /* Update board when boardStr changes (for new board) */
   useEffect(() => {
-    setBoard(parseBoard(boardStr));
-    setInitialBoard(parseBoard(boardStr));
-    setNotes({});
-    setSelected({ row: 0, col: 0 });
-    setNumCells(getOrigNum(boardStr));
+    handleClearBoard();
   }, [boardStr]);
 
-  // Keyboard navigation
+  /* Keyboard navigation */
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (selected.row === null || selected.col === null) return;
       let { row, col } = selected;
-    //   const notesActive = notesMode || e.shiftKey;
-    //   setNotesMode(notesMode || e.shiftKey);
-    //   if (e.key === "Shift") {
-    //     // console.log("shifting");
-    //     setShiftHeld(true);
-    //     notesActive = true;
-    //   }
+      /* SHIFT */
       if (e.shiftKey) {
-        console.log("shifting")
         setNotesMode(!notesMode);
-        e.preventDefault(); // Prevent default behavior for Shift
+        e.preventDefault(); 
       }
+
+      /* ARROWS */
       if (e.key === "ArrowLeft") {
         col = col > 0 ? col - 1 : col;
       } else if (e.key === "ArrowRight") {
@@ -63,7 +80,10 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
         row = row > 0 ? row - 1 : row;
       } else if (e.key === "ArrowDown") {
         row = row < 8 ? row + 1 : row;
-      } else if (
+      } 
+
+      /* DELETE */
+      else if (
         (e.key === "Backspace" || 
         e.key === "Delete") && 
         initialBoard[row][col] === 0
@@ -71,39 +91,48 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
         handleNumberPadClear();
         e.preventDefault();
         return;
-      } else if (
+      } 
+
+      /* NUMBER INPUT */
+      else if (
         /^[1-9]$/.test(e.key) && 
         initialBoard[row][col] === 0
       ) {
         handleNumberPadInput(e.key);
         e.preventDefault();
         return;
-      } else {
+      } 
+
+      /* OTHER */
+      else {
         return;
       }
+
       setSelected({ row, col });
       e.preventDefault();
     };
-    // const handleKeyUp = (e) => {
-    //   if (e.key === "Shift") {
-    //     setNotesMode(false);
-    //     // console.log("not shifting");
-    //   }
-    // };
+
     window.addEventListener("keydown", handleKeyDown);
-    // window.addEventListener("keyup", handleKeyUp);
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-    //   window.removeEventListener("keyup", handleKeyUp);
     };
   }, [selected, board, notes, notesMode, shiftHeld, initialBoard]);
 
-  const handleCellClick = (row, col) => {
-    setSelected({ row, col });
+  /************************  FUNCTIONS  **************************/
+
+  /* Handle board reset for clear, generating new, changing diff */
+  const handleClearBoard = () => {
+    setBoard(parseBoard(boardStr));
+    setInitialBoard(parseBoard(boardStr));
+    setNumCells(getOrigNum(boardStr));
+    setNotes({});
+    setIncorrectCells({});
+    setSelected({ row: 0, col: 0 });
+    if (resetTimer) resetTimer();
   };
 
-
-
+  /* Render in cell notes */
   const renderNotes = (row, col) => {
     const key = `${row}-${col}`;
     const cellNotes = notes[key] || [];
@@ -125,23 +154,22 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
     );
   };
 
+  /* Check to see if there are any repeats next to current cell */
   const checkCell = (row, col, val) => {
     let first_row = Math.floor(row / 3) * 3;
     let first_col = Math.floor(col / 3) * 3;
     let wrong = false;
-    // console.log(`Checking cell: ${val}`);
     for (let i = 0; i < 9; i++) {
-        // console.log(`${val} vs col ${board[i][col]}`)
+        // Row incorrect
         if (board[i][col] == val) {
-            // console.log("col: WRONG");
             wrong = true;
         }
+        // Column incorrect
         else if (board[row][i] == val) {
-            // console.log("row: WRONG")
             wrong = true;
         }
+        // Box incorrect
         if (board[first_row + Math.floor(i / 3)][first_col + (i % 3)] == val) {
-            // console.log("box: WRONG");
             wrong = true;
         }
     }
@@ -149,154 +177,101 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
         ...prev,
         [`${row}-${col}`]: wrong
     }));
-    if (wrong) {
-        return false;
-    } else {
-        return true;
-    }
-    //     let first_row = Math.floor(row / 3) * 3;
-    // let first_col = Math.floor(col / 3) * 3;
-    // let wrongCells = {};
-    // // Check column
-    // for (let i = 0; i < 9; i++) {
-    //     if (i !== row && board[i][col] == val && val !== "") {
-    //         wrongCells[`${i}-${col}`] = true;
-    //     }
-    // }
-    // // Check row
-    // for (let i = 0; i < 9; i++) {
-    //     if (i !== col && board[row][i] == val && val !== "") {
-    //         wrongCells[`${row}-${i}`] = true;
-    //     }
-    // }
-    // // Check box
-    // for (let i = 0; i < 9; i++) {
-    //     const r = first_row + Math.floor(i / 3);
-    //     const c = first_col + (i % 3);
-    //     if ((r !== row || c !== col) && board[r][c] == val && val !== "") {
-    //         wrongCells[`${r}-${c}`] = true;
-    //     }
-    // }
-    // // Always mark the current cell if any conflict found
-    // if (Object.keys(wrongCells).length > 0 && val !== "") {
-    //     wrongCells[`${row}-${col}`] = true;
-    // }
-    // setIncorrectCells(prev => ({
-    //     ...prev,
-    //     ...wrongCells,
-    //     // Clear incorrect if no conflicts
-    //     ...(Object.keys(wrongCells).length === 0 ? { [`${row}-${col}`]: false } : {})
-    // }));
+
+    return !wrong; // Return state of correctness
   }
 
-
-  const handleClearBoard = () => {
-    setBoard(parseBoard(boardStr));
-    setInitialBoard(parseBoard(boardStr));
-    setNumCells(getOrigNum(boardStr));
-    setNotes({});
-    setIncorrectCells({});
-    if (resetTimer) resetTimer();
-  };
-
-  // Handler for number pad buttons
+  /* Handler for number pad buttons */
   const handleNumberPadInput = (num) => {
     const { row, col } = selected;
-    // const notesActive = notesMode || shiftHeld;
     if (row === null || col === null) return;
     if (initialBoard[row][col] !== 0) return; // Don't allow editing clues
-    // if (num === board[row][col]) return
     const newBoard = board.map(arr => arr.slice());
+
+    // Check previously filled val to keep track of completion
     const prefilled = newBoard[row][col] != 0;
     const prevNum = newBoard[row][col];
     const prevCorrect = !incorrectCells[`${row}-${col}`];
+
+    // Notes mode
     if (notesMode) {
-        // Notes mode: toggle note number in cell
         const key = `${row}-${col}`;
         let cellNotes = notes[key] || [];
         if (cellNotes.includes(num)) {
-        cellNotes = cellNotes.filter(n => n !== num);
+            cellNotes = cellNotes.filter(n => n !== num);
         } else {
-        cellNotes = [...cellNotes, num].sort();
+            cellNotes = [...cellNotes, num].sort();
         }
         newBoard[row][col] = 0;
         setBoard(newBoard);
+        setNotes({ ...notes, [key]: cellNotes });
+
         // if prev board was correct, increase num remaining
-        if (prevCorrect) {
+        if (prevCorrect && prevNum != 0) {
             let currCellsRemaining = numCells + 1
-            console.log(`nnum cells left now: ${currCellsRemaining}`)
             setNumCells(currCellsRemaining);
         }
         
-        setNotes({ ...notes, [key]: cellNotes });
-    } else {
-        // Normal mode: set cell value
+    } 
+    // Normal mode
+    else {
         const prefilled = newBoard[row][col] != 0;
+
         // if number isnt same as previously typed
         if (newBoard[row][col] != Number(num)) {
-            console.log(`new num: ${Number(num)}, old: ${newBoard[row][col]}`)
+
+            let correct = checkCell(row, col, num);
             newBoard[row][col] = Number(num); // set new
             setBoard(newBoard);
-            let correct = checkCell(row, col, num);
-
-            // if cell is correct and previous was not correct
+            
+            // Cell is correct and previous was not correct, decrease cells remaining
             if (correct && (prevNum == 0 || prevCorrect == false)) {
                 let currCellsRemaining = numCells - 1
-                console.log(`num cells left now: ${currCellsRemaining}, correct and prev not correct`)
 
+                // Check for completion
                 if (currCellsRemaining == 0) {
-                    console.log("filled");
                     if (typeof onFinish === "function") onFinish();
                     setFinished(true);
                 }
                 setNumCells(currCellsRemaining);
-            } else if (!correct && prevCorrect && prevNum != 0) { // not correct and prev was correct
-                console.log(`num cells left now: ${numCells + 1}, not correct and prev was correct`)
+            }
+            // Cell is not correct and previous cell was correct 
+            else if (!correct && (prevCorrect && prevNum != 0)) { 
                 setNumCells(numCells + 1);
             }
-                // if not correct and was previously incorrect, increment
-
-            // if cell was prefilled and is now correct, also decrement
-        
-        
         }
     }
   };
 
-  // Handler for clear button
+  // Handler for cell clear button
   const handleNumberPadClear = () => {
     const { row, col } = selected;
     if (row === null || col === null) return;
-    if (initialBoard[row][col] !== 0) return;
+    if (initialBoard[row][col] !== 0) return; // Dont delete prefilled
     const notesActive = notesMode || shiftHeld;
+
     // if empty and there are notes, delete notes
     if (board[row][col] == 0) {
         setNotes({ ...notes, [`${row}-${col}`]: [] });
-    } else {
+    }
+    // delete number in cell
+    else {
         const newBoard = board.map(arr => arr.slice());
         newBoard[row][col] = 0;
         setBoard(newBoard);
+        // if it was correct, increment cells remaining
         if (incorrectCells[`${row}-${col}`] === false) {
             let currCellsRemaining = numCells + 1;
-            console.log(`nnum cells left now: ${currCellsRemaining}`);
             setNumCells(currCellsRemaining);
         }
-        
-
         setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
     }
-    // const { row, col } = selected;
-    // if (row === null || col === null) return;
-    // if (initialBoard[row][col] !== 0) return;
-    // const newBoard = board.map(arr => arr.slice());
-    // newBoard[row][col] = 0;
-    // setBoard(newBoard);
-    // setNotes({ ...notes, [`${row}-${col}`]: [] });
-    // setIncorrectCells(prev => ({ ...prev, [`${row}-${col}`]: false }));
   };
-
+  
+  /************************  RENDER HTML  **************************/
   return (
     <div>
+      {/* FINISHED OVERLAY */}
       {finished && (
         <div className="sudoku-overlay">
             <div className="sudoku-overlay-content">
@@ -304,10 +279,12 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
             <p>Your time: {typeof time === "number" ? 
                 `${String(Math.floor(time / 3600)).padStart(2, "0")}:${String(Math.floor((time % 3600) / 60)).padStart(2, "0")}:${String(time % 60).padStart(2, "0")}` 
                 : time}</p>
-            <button onClick={() => onGenerateNewBoard()}>Generate New Board</button>
+            <button onClick={() => {setFinished(false); setIncorrectCells({}); onGenerateNewBoard();}}>Generate New Board</button>
             </div>
         </div>
         )}
+
+      {/* SUDOKU BOARD */}
       <table className="sudoku-table">
         <tbody>
           {board.map((rowArr, row) => (
@@ -337,7 +314,7 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
                   <td
                     key={col}
                     className={cellClass}
-                    onClick={() => handleCellClick(row, col)}
+                    onClick={() => setSelected({row, col})}
                   >
                     {cell !== 0 && (
                       <span
@@ -354,19 +331,27 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
           ))}
         </tbody>
       </table>
+
+      {/* OPTION BUTTONS */}
       <div className="optn-btn-container">
+
+        {/* Notes Mode Button */}
         <button
             className={`notes-mode-btn${notesMode ? " active" : ""}`}
             onClick={() => setNotesMode(!notesMode)}
         >
             {notesMode ? "Exit Notes Mode" : "Enter Notes Mode"}
         </button>
+
+        {/* Generate New Board Button */}
         <button
             className="generate-btn"
-            onClick={() => onGenerateNewBoard()}
+            onClick={() => {setIncorrectCells({}); onGenerateNewBoard();}}
         >
             Generate New Board
         </button>
+
+        {/* Clear Button */}
         <button
             className="clear-btn"
             onClick={handleClearBoard}
@@ -374,6 +359,8 @@ const SudokuBoard = ({ boardStr, resetTimer, onGenerateNewBoard, time, onFinish}
             Clear
         </button>
       </div>
+
+      {/* NUMBER PAD */}
       <div className="number-pad" style={{ marginTop: "20px" }}>
         {[1,2,3,4,5,6,7,8,9].map(num => (
           <button
