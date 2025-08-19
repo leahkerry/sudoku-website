@@ -80,10 +80,7 @@ function App() {
             ...prev,
             [diff]: [...prev[diff], ...newBoards],
             }));
-            console.log(`now boards: ${boards[diff]}`);
-        } else {
-            console.log(`enough ${diff} boards, no new ones`)
-        }
+        } 
       }
     };
 
@@ -95,47 +92,6 @@ function App() {
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, [boards]); // Depend on the boards state
 
-    // Fetch boards on mount
-    //   useEffect(() => {
-    //     // setLoading(true);
-    //     // Helper to fetch boards
-    //     const fetchBoards = async (diff, count) => {
-    //       const boardsArr = [];
-    //       for (let i = 0; i < count; i++) {
-    //         const res = await fetch(`https://sudoku-ro71.onrender.com/boards/${diff}`, {
-    //           method: "POST",
-    //           headers: { "Content-Type": "application/json" },
-    //           body: JSON.stringify()
-    //         });
-    //         const data = await res.json();
-    //         boardsArr.push(data[0]);
-    //         console.log("new board created")
-    //       }
-    //       return boardsArr;
-    //     };
-    //     // const fetchBoards = async (diff, count) => {
-    //     //     return puzzlesJson[diff];
-    //     // }
-
-    //     (async () => {
-    //       // Generate 2 easy, 2 med, 2 hard boards in background
-    //       const [easyBoards, medBoards] = await Promise.all([
-    //         fetchBoards("easy", 2),
-    //         fetchBoards("med", 2)
-    //       ]);
-    //     //   setBoards({ easy: easyBoards, med: medBoards});
-    //     //   setBoardStr(()easyBoards[0] || "");
-    //       if (boards.easy.length > 1) {
-    //         console.log(`easy: ${boards['easy']} ${typeof boards.easy}`)
-    //         // setBoards((prev) => ({
-    //         //     ...prev,
-    //         //     ['easy']: prev['easy'].slice(1),
-    //         //     }));
-    //       }
-    //       setLoading(false);
-    //       setSeconds(0);
-    //     })();
-    //   }, []);
 
   /************************  FUNCTIONS  **************************/
   const resetTimer = () => {
@@ -174,10 +130,9 @@ function App() {
   // Serve up new board and call API if none in array
   const generateNewBoard = async (diff = difficulty) => {
     setLoading(true);
-    console.log(`generating... ${boards[diff]}`)
     stopTimer();
     if (boards[diff].length == 0) {
-        console.log("generating NEW, none in pool")
+        console.log("Generating NEW board, none in pool")
         try {
             const newBoards = await fetchBoards(diff, 1);
             if (newBoards && newBoards.length > 0) {
@@ -192,7 +147,6 @@ function App() {
     }
     else 
     {
-        console.log("getting from pool");
         const next = boards[diff][0];
         setBoardStr(next);
 
@@ -215,7 +169,6 @@ function App() {
     const boardsArr = [];
     for (let i = 0; i < count; i++) {
       try {
-        console.log(`fetching first board ${diff}`)
         const res = await fetch(
           `https://sudoku-ro71.onrender.com/boards/${diff}`,
           {
@@ -226,7 +179,7 @@ function App() {
         );
         const data = await res.json();
         boardsArr.push(data[data.length - 1]); // push last in array
-        console.log(`new ${diff} board created`);
+        console.log(`New ${diff} board created`);
       } catch (error) {
         console.error(`Error fetching ${diff} board:`, error);
       }
